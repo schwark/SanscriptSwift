@@ -22,7 +22,6 @@ let package = Package(
     ],
     dependencies: [
         // Dependencies declare other packages that this package depends on.
-        .package(url: "https://github.com/jdfergason/swift-toml.git", from: "1.0.0"),
     ],
     targets: [
         // Targets are the basic building blocks of a package. A target can define a module or a test suite.
@@ -35,7 +34,10 @@ let package = Package(
             ]),
         .executableTarget(
             name: "SanscriptCLI",
-            dependencies: ["SanscriptSwift", .product(name: "Toml", package: "swift-toml")]),
+            dependencies: ["SanscriptSwift"],
+            resources: [
+                .process("test_cases.json")
+            ]),
         .testTarget(
             name: "SanscriptSwiftTests",
             dependencies: ["SanscriptSwift"]),
