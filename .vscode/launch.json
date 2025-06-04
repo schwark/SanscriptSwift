@@ -1,0 +1,22 @@
+{
+    "configurations": [
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:SanscriptSwift}",
+            "name": "Debug SanscriptCLI",
+            "program": "${workspaceFolder:SanscriptSwift}/.build/debug/SanscriptCLI",
+            "preLaunchTask": "swift: Build Debug SanscriptCLI"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:SanscriptSwift}",
+            "name": "Release SanscriptCLI",
+            "program": "${workspaceFolder:SanscriptSwift}/.build/release/SanscriptCLI",
+            "preLaunchTask": "swift: Build Release SanscriptCLI"
+        }
+    ]
+}
