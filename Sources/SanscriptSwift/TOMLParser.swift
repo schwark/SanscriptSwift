@@ -8,6 +8,21 @@
 
 import Foundation
 
+func replaceQuotesInUnicodeScalars(in text: String, with replacement: String = "") -> String {
+    let scalars = text.unicodeScalars
+    var newScalars = String.UnicodeScalarView()
+    
+    for scalar in scalars {
+        if scalar == "\"" {
+            newScalars.append(contentsOf: replacement.unicodeScalars)
+        } else {
+            newScalars.append(scalar)
+        }
+    }
+    
+    return String(newScalars)
+}
+
 /// Error types for TOML parsing
 public enum TOMLParserError: Error {
     case invalidSyntax(String)
@@ -103,23 +118,13 @@ public class TOMLParser {
             
             // Parse key-value pairs
             if let separatorRange = trimmedLine.range(of: "=") {
-                let key = trimmedLine[..<separatorRange.lowerBound].trimmingCharacters(in: .whitespacesAndNewlines)
-                let value = trimmedLine[separatorRange.upperBound...].trimmingCharacters(in: .whitespacesAndNewlines)
-                
+                let key = replaceQuotesInUnicodeScalars(in: trimmedLine[..<separatorRange.lowerBound].trimmingCharacters(in: .whitespacesAndNewlines))
+                let value = replaceQuotesInUnicodeScalars(in: trimmedLine[separatorRange.upperBound...].trimmingCharacters(in: .whitespacesAndNewlines))
+                print ("key: \(key)", "value: \(value)") 
                 if currentSection.isEmpty {
                     throw TOMLParserError.invalidSyntax("Key-value pair outside of section at line \(lineNumber + 1)")
                 }
                 
-                // Handle string values (with quotes)
-                if value.hasPrefix("\"") && value.hasSuffix("\"") {
-                    let startIndex = value.index(after: value.startIndex)
-                    let endIndex = value.index(before: value.endIndex)
-                    let cleanValue = String(value[startIndex..<endIndex])
-                        .replacingOccurrences(of: "\\\"", with: "\"")
-                        .replacingOccurrences(of: "\\\\", with: "\\")
-                    
-                    result[currentSection]?[key] = cleanValue
-                } 
                 // Handle array values (for alternates)
                 else if value.hasPrefix("[") && value.hasSuffix("]") {
                     let startIndex = value.index(after: value.startIndex)
@@ -139,17 +144,7 @@ public class TOMLParser {
                             // End of element
                             let trimmedElement = currentElement.trimmingCharacters(in: .whitespacesAndNewlines)
                             if !trimmedElement.isEmpty {
-                                // Clean up quoted strings
-                                if trimmedElement.hasPrefix("\"") && trimmedElement.hasSuffix("\"") {
-                                    let startIdx = trimmedElement.index(after: trimmedElement.startIndex)
-                                    let endIdx = trimmedElement.index(before: trimmedElement.endIndex)
-                                    let cleanElement = String(trimmedElement[startIdx..<endIdx])
-                                        .replacingOccurrences(of: "\\\"", with: "\"")
-                                        .replacingOccurrences(of: "\\\\", with: "\\")
-                                    arrayElements.append(cleanElement)
-                                } else {
-                                    arrayElements.append(trimmedElement)
-                                }
+                                arrayElements.append(trimmedElement)
                             }
                             currentElement = ""
                         } else {
@@ -160,17 +155,7 @@ public class TOMLParser {
                     // Add the last element
                     let trimmedElement = currentElement.trimmingCharacters(in: .whitespacesAndNewlines)
                     if !trimmedElement.isEmpty {
-                        // Clean up quoted strings
-                        if trimmedElement.hasPrefix("\"") && trimmedElement.hasSuffix("\"") {
-                            let startIdx = trimmedElement.index(after: trimmedElement.startIndex)
-                            let endIdx = trimmedElement.index(before: trimmedElement.endIndex)
-                            let cleanElement = String(trimmedElement[startIdx..<endIdx])
-                                .replacingOccurrences(of: "\\\"", with: "\"")
-                                .replacingOccurrences(of: "\\\\", with: "\\")
-                            arrayElements.append(cleanElement)
-                        } else {
-                            arrayElements.append(trimmedElement)
-                        }
+                        arrayElements.append(trimmedElement)
                     }
                     
                     result[currentSection]?[key] = arrayElements
