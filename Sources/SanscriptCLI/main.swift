@@ -1,161 +1,60 @@
 import Foundation
 import SanscriptSwift
+import Toml
 
 print("SanscriptSwift CLI - Minimal Test")
 print("=============================")
 
-// Create a simple test with hardcoded values
+// Create a Sanscript instance
 let sanscript = Sanscript.shared
 
-// Add minimal schemes directly
-print("Adding minimal schemes...")
-
-// Add a basic Devanagari scheme with just a few characters
-// Make sure to include all necessary components for proper transliteration
-let devanagariScheme: [String: [String: String]] = [
-        "vowels": [
-            "अ": "a",
-            "आ": "ā",
-            "इ": "i",
-            "ई": "ī",
-            "उ": "u",
-            "ऊ": "ū",
-            "ए": "e",
-            "ऐ": "ai",
-            "ओ": "o",
-            "औ": "au"
-        ],
-        "vowel_marks": [
-            "ा": "ā",
-            "ि": "i",
-            "ी": "ī",
-            "ु": "u",
-            "ू": "ū",
-            "े": "e",
-            "ै": "ai",
-            "ो": "o",
-            "ौ": "au"
-        ],
-        "consonants": [
-            "क": "ka",
-            "ख": "kha",
-            "ग": "ga",
-            "घ": "gha",
-            "ङ": "ṅa",
-            "च": "ca",
-            "छ": "cha",
-            "ज": "ja",
-            "झ": "jha",
-            "ञ": "ña",
-            "ट": "ṭa",
-            "ठ": "ṭha",
-            "ड": "ḍa",
-            "ढ": "ḍha",
-            "ण": "ṇa",
-            "त": "ta",
-            "थ": "tha",
-            "द": "da",
-            "ध": "dha",
-            "न": "na",
-            "प": "pa",
-            "फ": "pha",
-            "ब": "ba",
-            "भ": "bha",
-            "म": "ma",
-            "य": "ya",
-            "र": "ra",
-            "ल": "la",
-            "व": "va",
-            "श": "śa",
-            "ष": "ṣa",
-            "स": "sa",
-            "ह": "ha"
-        ],
-        "virama": [
-            "्": ""
-        ],
-        "yogavaahas": [
-            "ं": "ṃ",
-            "ः": "ḥ"
-        ]
-    ]
+// Load schemes from file system path
+print("Loading schemes from file system...")
+do {
+    // Get the path to the resources directory
+    let resourcesPath = "/Users/schwark/projects/SanscriptSwift/Sources/SanscriptSwift/Resources/common_maps"
     
-// Add a basic IAST scheme with just a few characters
-// Make sure to properly identify this as a Roman scheme
-let iastScheme: [String: [String: String]] = [
-
-        "vowels": [
-            "अ": "a",
-            "आ": "ā",
-            "इ": "i",
-            "ई": "ī",
-            "उ": "u",
-            "ऊ": "ū",
-            "ए": "e",
-            "ऐ": "ai",
-            "ओ": "o",
-            "औ": "au"
-        ],
-        "consonants": [
-            "क": "k",
-            "ख": "kh",
-            "ग": "g",
-            "घ": "gh",
-            "ङ": "ṅ",
-            "च": "c",
-            "छ": "ch",
-            "ज": "j",
-            "झ": "jh",
-            "ञ": "ñ",
-            "ट": "ṭ",
-            "ठ": "ṭh",
-            "ड": "ḍ",
-            "ढ": "ḍh",
-            "ण": "ṇ",
-            "त": "t",
-            "थ": "th",
-            "द": "d",
-            "ध": "dh",
-            "न": "n",
-            "प": "p",
-            "फ": "ph",
-            "ब": "b",
-            "भ": "bh",
-            "म": "m",
-            "य": "y",
-            "र": "r",
-            "ल": "l",
-            "व": "v",
-            "श": "ś",
-            "ष": "ṣ",
-            "स": "s",
-            "ह": "h"
-        ],
-        "virama": [
-            "्": ""
-        ],
-        "yogavaahas": [
-            "ं": "ṃ",
-            "ः": "ḥ"
-        ],
-        "alternates": [
-            "ṃ": "ṁ",
-            "ṛ": "r̥",
-            "ṝ": "r̥̄",
-            "ḷ": "l̥",
-            "ḹ": "l̥̄"
-        ],
-        "isRomanScheme": [
-            "true": "true"
-        ]
-    ]
+    // Get paths to brahmic and roman directories
+    let brahmicPath = "\(resourcesPath)/brahmic"
+    let romanPath = "\(resourcesPath)/roman"
     
-// Add the schemes to Sanscript
-print("Adding schemes to Sanscript...")
-sanscript.addBrahmicScheme(name: "devanagari", scheme: devanagariScheme)
-sanscript.addRomanScheme(name: "iast", scheme: iastScheme)
-print("Schemes added successfully")
-
+    // Load schemes from these directories
+    let fileManager = FileManager.default
+    
+    // Load Brahmic schemes
+    if let brahmicFiles = try? fileManager.contentsOfDirectory(at: URL(fileURLWithPath: brahmicPath), includingPropertiesForKeys: nil) {
+        for fileURL in brahmicFiles where fileURL.pathExtension == "toml" {
+            let schemeName = fileURL.deletingPathExtension().lastPathComponent
+            do {
+                try sanscript.loadSchemeFromTOML(filePath: fileURL.path, isRoman: false)
+                print("Loaded Brahmic scheme: \(schemeName)")
+            } catch {
+                print("Warning: Failed to load Brahmic scheme \(schemeName): \(error)")
+            }
+        }
+    }
+    
+    // Load Roman schemes
+    if let romanFiles = try? fileManager.contentsOfDirectory(at: URL(fileURLWithPath: romanPath), includingPropertiesForKeys: nil) {
+        for fileURL in romanFiles where fileURL.pathExtension == "toml" {
+            let schemeName = fileURL.deletingPathExtension().lastPathComponent
+            do {
+                try sanscript.loadSchemeFromTOML(filePath: fileURL.path, isRoman: true)
+                print("Loaded Roman scheme: \(schemeName)")
+            } catch {
+                print("Warning: Failed to load Roman scheme \(schemeName): \(error)")
+            }
+        }
+    }
+    
+    // Check if we have the required schemes for our tests
+    if sanscript.schemes["devanagari"] != nil && sanscript.schemes["iast"] != nil {
+        print("Required schemes loaded successfully")
+    } else {
+        print("Error: Required schemes 'devanagari' and/or 'iast' were not loaded")
+        exit(1)
+    }
+}
 // Print available schemes
 print("Available schemes: \(sanscript.schemes.keys.joined(separator: ", "))")
 
@@ -164,13 +63,21 @@ print("\nPerforming detailed transliteration tests...")
 
 // Print the schemes for debugging
 print("\nDevanagari scheme:")
-for (key, value) in devanagariScheme {
-    print("  \(key): \(value.count) entries")
+if let devanagariScheme = sanscript.schemes["devanagari"] {
+    for (key, value) in devanagariScheme {
+        if let dictValue = value as? [String: String] {
+            print("  \(key): \(dictValue.count) entries")
+        }
+    }
 }
 
 print("\nIAST scheme:")
-for (key, value) in iastScheme {
-    print("  \(key): \(value.count) entries")
+if let iastScheme = sanscript.schemes["iast"] {
+    for (key, value) in iastScheme {
+        if let dictValue = value as? [String: String] {
+            print("  \(key): \(dictValue.count) entries")
+        }
+    }
 }
 
 // Define test cases

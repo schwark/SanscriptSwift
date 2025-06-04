@@ -254,6 +254,8 @@ public class Sanscript {
         let fromSchemeA = map["fromSchemeA"] as? String ?? ""
         
         var hadConsonant = false
+        var tempLetter: String? = nil
+        var tempMark: String? = nil
         var tokenBuffer = ""
         
         // Transliteration state variables
@@ -275,9 +277,12 @@ public class Sanscript {
             }
             
             // Match all token substrings to our map
-            var matched = false
-            for j in stride(from: 0, to: maxTokenLength, by: 1) {
+            var j = 0
+            var found = false
+            
+            while j < maxTokenLength {
                 if j >= tokenBuffer.count {
+                    j += 1
                     continue
                 }
                 
@@ -290,51 +295,60 @@ public class Sanscript {
                 } else if token == "##" {
                     toggledTrans = !toggledTrans
                     tokenBuffer = String(tokenBuffer.dropFirst(2))
-                    matched = true
+                    found = true
                     break
                 }
                 
                 skippingTrans = skippingSGML || toggledTrans
                 
-                if let letter = letters[token], !skippingTrans {
-                    if toRoman {
-                        buf.append(letter)
-                    } else {
-                        // Handle the implicit vowel. Ignore 'a' and force
-                        // vowels to appear as marks if we've just seen a consonant
-                        if hadConsonant {
-                            if let tempMark = marks[token] {
-                                buf.append(tempMark)
-                            } else if token != fromSchemeA {
-                                buf.append(virama)
-                                buf.append(letter)
-                            }
+                if !skippingTrans {
+                    tempLetter = letters[token]
+                    if tempLetter != nil {
+                        if toRoman {
+                            buf.append(tempLetter!)
                         } else {
-                            buf.append(letter)
+                            // Handle the implicit vowel. Ignore 'a' and force
+                            // vowels to appear as marks if we've just seen a consonant
+                            if hadConsonant {
+                                tempMark = marks[token]
+                                if tempMark != nil {
+                                    buf.append(tempMark!)
+                                } else if token != fromSchemeA {
+                                    buf.append(virama)
+                                    buf.append(tempLetter!)
+                                }
+                            } else {
+                                buf.append(tempLetter!)
+                            }
+                            hadConsonant = consonants[token] != nil
                         }
-                        hadConsonant = consonants[token] != nil
+                        
+                        tokenBuffer = String(tokenBuffer.dropFirst(maxTokenLength - j))
+                        found = true
+                        break
+                    } else if j == maxTokenLength - 1 {
+                        if hadConsonant {
+                            hadConsonant = false
+                            if !optSyncope {
+                                buf.append(virama)
+                            }
+                        }
+                        
+                        buf.append(token)
+                        tokenBuffer = String(tokenBuffer.dropFirst(1))
+                        // No need for break here as j == maxTokenLength - 1 is true only on the last iteration
                     }
-                    
-                    tokenBuffer = String(tokenBuffer.dropFirst(maxTokenLength - j))
-                    matched = true
-                    break
                 } else if j == maxTokenLength - 1 {
-                    if hadConsonant {
-                        hadConsonant = false
-                        if !optSyncope {
-                            buf.append(virama)
-                        }
-                    }
-                    
                     buf.append(token)
                     tokenBuffer = String(tokenBuffer.dropFirst(1))
-                    matched = true
-                    break
                 }
+                
+                j += 1
             }
             
-            if !matched && !tokenBuffer.isEmpty {
-                // If we get here, we've exhausted all possibilities and must move forward
+            // If we've gone through all possibilities and the token buffer is still not empty,
+            // we need to handle the first character and move on
+            if !found && tokenBuffer.count > 0 {
                 let firstChar = String(tokenBuffer.prefix(1))
                 buf.append(firstChar)
                 tokenBuffer = String(tokenBuffer.dropFirst(1))
@@ -403,10 +417,9 @@ public class Sanscript {
             }
         }
         
-        // Process each character in the input
-        for i in 0..<processedData.count {
-            let index = processedData.index(processedData.startIndex, offsetBy: i)
-            let L = String(processedData[index])
+        // Process each character
+        for char in processedData {
+            let L = String(char)
             
             // Toggle transliteration state
             if L == "#" {
@@ -427,26 +440,24 @@ public class Sanscript {
                 continue
             }
             
-            // Check for marks
-            if let temp = marks[L] {
-                buf.append(temp)
+            // Handle marks
+            if let mark = marks[L] {
+                buf.append(mark)
                 hadRomanConsonant = false
             } else {
-                // Handle dangling hash
                 if danglingHash {
                     buf.append("#")
                     danglingHash = false
                 }
                 
-                // Add implicit 'a' vowel if needed
                 if hadRomanConsonant {
                     buf.append(toSchemeA)
                     hadRomanConsonant = false
                 }
                 
                 // Push transliterated letter if possible, otherwise push the letter itself
-                if let temp = letters[L] {
-                    buf.append(temp)
+                if let letter = letters[L] {
+                    buf.append(letter)
                     hadRomanConsonant = toRoman && (consonants[L] != nil)
                 } else {
                     buf.append(L)
@@ -454,7 +465,6 @@ public class Sanscript {
             }
         }
         
-        // Handle any final consonant
         if hadRomanConsonant {
             buf.append(toSchemeA)
         }
