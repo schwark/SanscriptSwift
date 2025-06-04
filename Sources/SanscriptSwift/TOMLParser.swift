@@ -8,6 +8,9 @@
 
 import Foundation
 
+/// Debug flag for TOMLParser
+public var tomlParserDebug = false
+
 func replaceQuotesInUnicodeScalars(in text: String, with replacement: String = "") -> String {
     let scalars = text.unicodeScalars
     var newScalars = String.UnicodeScalarView()
@@ -120,7 +123,9 @@ public class TOMLParser {
             if let separatorRange = trimmedLine.range(of: "=") {
                 let key = replaceQuotesInUnicodeScalars(in: trimmedLine[..<separatorRange.lowerBound].trimmingCharacters(in: .whitespacesAndNewlines))
                 let value = replaceQuotesInUnicodeScalars(in: trimmedLine[separatorRange.upperBound...].trimmingCharacters(in: .whitespacesAndNewlines))
-                print ("key: \(key)", "value: \(value)") 
+                if tomlParserDebug || Sanscript.debug {
+                    print("key: \(key)", "value: \(value)")
+                } 
                 if currentSection.isEmpty {
                     throw TOMLParserError.invalidSyntax("Key-value pair outside of section at line \(lineNumber + 1)")
                 }

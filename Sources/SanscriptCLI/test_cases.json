@@ -1,0 +1,82 @@
+{
+  "iast_to_devanagari": [
+    {
+      "input": "namaste",
+      "expected": "नमस्ते"
+    },
+    {
+      "input": "saṃskṛta",
+      "expected": "संस्कृत"
+    },
+    {
+      "input": "śrīmad bhagavad gītā",
+      "expected": "श्रीमद् भगवद् गीता"
+    },
+    {
+      "input": "kṛṣṇa",
+      "expected": "कृष्ण"
+    },
+    {
+      "input": "dharma",
+      "expected": "धर्म"
+    }
+  ],
+  "itrans_dravidian_to_telugu": [
+    {
+      "input": "namastE",
+      "expected": "నమస్తే"
+    },
+    {
+      "input": "saMskRRita",
+      "expected": "సంస్కృత"
+    },
+    {
+      "input": "shrImad bhagavad gItA",
+      "expected": "శ్రీమద్ భగవద్ గీతా"
+    },
+    {
+      "input": "kRRiShNa",
+      "expected": "కృష్ణ"
+    },
+    {
+      "input": "dharma",
+      "expected": "ధర్మ"
+    },
+    {
+      "input": "rAma",
+      "expected": "రామ"
+    },
+    {
+      "input": "gaNapati",
+      "expected": "గణపతి"
+    },
+    {
+      "input": "shaMkara",
+      "expected": "శంకర"
+    },
+    {
+      "input": "shiva",
+      "expected": "శివ"
+    },
+    {
+      "input": "durgA",
+      "expected": "దుర్గా"
+    },
+    {
+      "input": "telugu",
+      "expected": "తెలుగు"
+    },
+    {
+      "input": "nArAyaNa",
+      "expected": "నారాయణ"
+    }
+  ],
+  "consonant_clusters": [
+    {
+      "input": "kRRiShNa",
+      "from": "itrans",
+      "to": "telugu",
+      "expected": "కృష్ణ"
+    }
+  ]
+}

@@ -1,5 +1,5 @@
-_vowel_comment = [ "omissions  from optitrans_dravidian", "ea", "oa",]
-_yogavaahas_comment = [ "omissions  from optitrans_dravidian", "kH", "pH",]
+# _vowel_comment = [ "omissions  from optitrans_dravidian", "ea", "oa",]
+# _yogavaahas_comment = [ "omissions  from optitrans_dravidian", "kH", "pH",]
 
 [vowels]
 "अ" = "a"

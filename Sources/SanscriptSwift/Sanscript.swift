@@ -11,6 +11,8 @@ import Foundation
 
 /// Main Sanscript class that provides transliteration functionality
 public class Sanscript {
+    /// Debug flag to control debug output
+    public static var debug = false
     /// Default options for transliteration
     public struct Defaults: Equatable {
         public var skipSgml: Bool = false
@@ -199,7 +201,9 @@ public class Sanscript {
                     marks[accentedVowel] = (marks[baseVowel] ?? "") + targetAccent
                     
                     if letters[baseVowel] == nil {
-                        print("Error: \(baseVowel), \(targetAccent), \(letters)")
+                        if Sanscript.debug {
+                            print("Error: \(baseVowel), \(targetAccent), \(letters)")
+                        }
                     }
                     
                     letters[accentedVowel] = (letters[baseVowel] ?? "") + targetAccent
@@ -247,8 +251,10 @@ public class Sanscript {
      * - Returns: The finished string
      */
     private func transliterateRoman(data: String, map: [String: Any], options: Defaults) -> String {
-        print("\n==== TRANSLITERATE ROMAN DEBUG ====")
-        print("Input: \(data)")
+        if Sanscript.debug {
+            print("\n==== TRANSLITERATE ROMAN DEBUG ====")
+            print("Input: \(data)")
+        }
         
         let fromSchemeA = map["fromSchemeA"] as? String ?? "a"
         let consonants = map["consonants"] as? [String: String] ?? [:]
@@ -264,13 +270,15 @@ public class Sanscript {
         
         var buf = ""
         
-        print("fromSchemeA: '\(fromSchemeA)'")
-        print("virama: '\(virama)'")
-        print("maxTokenLength: \(maxTokenLength)")
-        print("consonants count: \(consonants.count)")
-        print("marks count: \(marks.count)")
-        print("letters count: \(letters.count)")
-        print("")
+        if Sanscript.debug {
+            print("fromSchemeA: '\(fromSchemeA)'")
+            print("virama: '\(virama)'")
+            print("maxTokenLength: \(maxTokenLength)")
+            print("consonants count: \(consonants.count)")
+            print("marks count: \(marks.count)")
+            print("letters count: \(letters.count)")
+            print("")
+        }
         var hadConsonant = false
         var tokenBuffer = ""
         
@@ -292,8 +300,10 @@ public class Sanscript {
                 }
             }
             
-            print("\nCurrent token buffer: '\(tokenBuffer)'")
-            print("hadConsonant: \(hadConsonant)")
+            if Sanscript.debug {
+                print("\nCurrent token buffer: '\(tokenBuffer)'")
+                print("hadConsonant: \(hadConsonant)")
+            }
             
             // Match all token substrings to our map
             
@@ -303,7 +313,9 @@ public class Sanscript {
                 
                 // This matches JavaScript's: const token = tokenBuffer.substr(0, maxTokenLength - j);
                 let token = tokenBuffer.count >= (maxTokenLength - j) ? String(tokenBuffer.prefix(maxTokenLength - j)) : tokenBuffer
-                print("  Trying token: '\(token)' (j=\(j))")
+                if Sanscript.debug {
+                    print("  Trying token: '\(token)' (j=\(j))")
+                }
                 
                 if skippingSGML {
                     skippingSGML = (token != ">")
@@ -312,7 +324,9 @@ public class Sanscript {
                 } else if token == "##" {
                     toggledTrans = !toggledTrans
                     tokenBuffer = String(tokenBuffer.dropFirst(2))
-                    print("  Found ##, toggling transliteration")
+                    if Sanscript.debug {
+                        print("  Found ##, toggling transliteration")
+                    }
                     break
                 }
                 
@@ -321,35 +335,51 @@ public class Sanscript {
                 // This exactly matches the JavaScript logic:
                 // if ((tempLetter = letters[token]) !== undefined && !skippingTrans) { ... }
                 if let tempLetter = letters[token], !skippingTrans {
-                    print("  Found match: '\(token)' -> '\(tempLetter)' (isConsonant: \(consonants[token] != nil))")
+                    if Sanscript.debug {
+                        print("  Found match: '\(token)' -> '\(tempLetter)' (isConsonant: \(consonants[token] != nil))")
+                    }
                     
                     if toRoman {
                         buf += tempLetter
-                        print("  Added to buffer (toRoman): '\(tempLetter)'")
+                        if Sanscript.debug {
+                            print("  Added to buffer (toRoman): '\(tempLetter)'")
+                        }
                     } else {
                         // Handle the implicit vowel. Ignore 'a' and force
                         // vowels to appear as marks if we've just seen a consonant
                         if hadConsonant {
                             if let tempMark = marks[token] {
                                 buf += tempMark
-                                print("  Added mark to buffer: '\(tempMark)'")
+                                if Sanscript.debug {
+                                    print("  Added mark to buffer: '\(tempMark)'")
+                                }
                             } else if token != fromSchemeA {
                                 buf += virama
                                 buf += tempLetter
-                                print("  Added virama + letter to buffer: '\(virama)\(tempLetter)'")
+                                if Sanscript.debug {
+                                    print("  Added virama + letter to buffer: '\(virama)\(tempLetter)'")
+                                }
                             } else {
-                                print("  Skipped implicit 'a' after consonant")
+                                if Sanscript.debug {
+                                    print("  Skipped implicit 'a' after consonant")
+                                }
                             }
                         } else {
                             buf += tempLetter
-                            print("  Added to buffer: '\(tempLetter)'")
+                            if Sanscript.debug {
+                                print("  Added to buffer: '\(tempLetter)'")
+                            }
                         }
                         hadConsonant = consonants[token] != nil
-                        print("  Updated hadConsonant: \(hadConsonant)")
+                        if Sanscript.debug {
+                            print("  Updated hadConsonant: \(hadConsonant)")
+                        }
                     }
                     
                     tokenBuffer = String(tokenBuffer.dropFirst(maxTokenLength - j))
-                    print("  Updated token buffer: '\(tokenBuffer)'")
+                    if Sanscript.debug {
+                        print("  Updated token buffer: '\(tokenBuffer)'")
+                    }
                     break
                 } else if j == maxTokenLength - 1 {
                     // This is the fallback case when no match is found after trying all possible token lengths
@@ -357,14 +387,20 @@ public class Sanscript {
                         hadConsonant = false
                         if !optSyncope {
                             buf += virama
-                            print("  Added virama to buffer: '\(virama)'")
+                            if Sanscript.debug {
+                                print("  Added virama to buffer: '\(virama)'")
+                            }
                         }
                     }
                     
                     buf += token // token is now just the first character
-                    print("  No match found, added to buffer: '\(token)'")
+                    if Sanscript.debug {
+                        print("  No match found, added to buffer: '\(token)'")
+                    }
                     tokenBuffer = String(tokenBuffer.dropFirst(1))
-                    print("  Updated token buffer: '\(tokenBuffer)'")
+                    if Sanscript.debug {
+                        print("  Updated token buffer: '\(tokenBuffer)'")
+                    }
                     break
                 }
             }
@@ -376,11 +412,15 @@ public class Sanscript {
         // If we end with a consonant and syncope is not enabled, add a virama
         if hadConsonant && !optSyncope {
             buf += virama
-            print("Added final virama: '\(virama)'")
+            if Sanscript.debug {
+                print("Added final virama: '\(virama)'")
+            }
         }
         
         var result = buf
-        print("Result before accent handling: '\(result)'")
+        if Sanscript.debug {
+            print("Result before accent handling: '\(result)'")
+        }
         
         // Handle accent placement for non-Roman scripts
         if !toRoman, let to = map["to"] as? String, let toScheme = schemes[to], let accents = map["accents"] as? [String: String], !accents.isEmpty {
@@ -390,17 +430,23 @@ public class Sanscript {
                 
                 // Create a pattern to match accent followed by yogavaha
                 let pattern = "([\(accentValues)])([\(yogavaahaValues)])"
-                print("Accent pattern: \(pattern)")
+                if Sanscript.debug {
+                    print("Accent pattern: \(pattern)")
+                }
                 if let regex = try? NSRegularExpression(pattern: pattern, options: []) {
                     let range = NSRange(result.startIndex..<result.endIndex, in: result)
                     result = regex.stringByReplacingMatches(in: result, options: [], range: range, withTemplate: "$2$1")
-                    print("Result after accent handling: '\(result)'")
+                    if Sanscript.debug {
+                        print("Result after accent handling: '\(result)'")
+                    }
                 }
             }
         }
         
-        print("Final result: '\(result)'")
-        print("==== END TRANSLITERATE ROMAN DEBUG ====\n")
+        if Sanscript.debug {
+            print("Final result: '\(result)'")
+            print("==== END TRANSLITERATE ROMAN DEBUG ====\n")
+        }
         return result
     }
     
@@ -569,7 +615,9 @@ public class Sanscript {
                     }
                 }
             }
-            print("transliteration from tamil_superscripted not fully implemented!")
+            if Sanscript.debug {
+                print("transliteration from tamil_superscripted not fully implemented!")
+            }
         }
         
         // Apply shortcuts from the source scheme
