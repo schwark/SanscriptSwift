@@ -47,7 +47,73 @@ public class Sanscript {
     
     /// Private initializer for singleton pattern
     private init() {
-        // Schemes will be loaded explicitly by the user
+        // Automatically load schemes from resources
+        do {
+            try loadSchemesFromResources()
+        } catch {
+            if Sanscript.debug {
+                print("Error loading schemes from resources: \(error)")
+            }
+        }
+    }
+    
+    /// Load schemes from the resources directory
+    /// - Throws: Error if loading fails
+    public func loadSchemesFromResources() throws {
+        // Get the path to the resources directory
+        guard let resourcesURL = Bundle.module.url(forResource: "common_maps", withExtension: nil, subdirectory: "Resources") else {
+            // Fallback to hardcoded path for development
+            let resourcesPath = "/Users/schwark/projects/SanscriptSwift/Sources/SanscriptSwift/Resources/common_maps"
+            return try loadSchemesFromPath(resourcesPath: resourcesPath)
+        }
+        
+        try loadSchemesFromPath(resourcesPath: resourcesURL.path)
+    }
+    
+    /// Load schemes from a specific path
+    /// - Parameter resourcesPath: Path to the resources directory containing brahmic and roman subdirectories
+    /// - Throws: Error if loading fails
+    public func loadSchemesFromPath(resourcesPath: String) throws {
+        // Get paths to brahmic and roman directories
+        let brahmicPath = "\(resourcesPath)/brahmic"
+        let romanPath = "\(resourcesPath)/roman"
+        
+        // Load schemes from these directories
+        let fileManager = FileManager.default
+        
+        // Load Brahmic schemes
+        if let brahmicFiles = try? fileManager.contentsOfDirectory(at: URL(fileURLWithPath: brahmicPath), includingPropertiesForKeys: nil) {
+            for fileURL in brahmicFiles where fileURL.pathExtension == "toml" {
+                let schemeName = fileURL.deletingPathExtension().lastPathComponent
+                do {
+                    try loadSchemeFromTOML(filePath: fileURL.path, isRoman: false)
+                    if Sanscript.debug {
+                        print("Loaded Brahmic scheme: \(schemeName)")
+                    }
+                } catch {
+                    if Sanscript.debug {
+                        print("Warning: Failed to load Brahmic scheme \(schemeName): \(error)")
+                    }
+                }
+            }
+        }
+        
+        // Load Roman schemes
+        if let romanFiles = try? fileManager.contentsOfDirectory(at: URL(fileURLWithPath: romanPath), includingPropertiesForKeys: nil) {
+            for fileURL in romanFiles where fileURL.pathExtension == "toml" {
+                let schemeName = fileURL.deletingPathExtension().lastPathComponent
+                do {
+                    try loadSchemeFromTOML(filePath: fileURL.path, isRoman: true)
+                    if Sanscript.debug {
+                        print("Loaded Roman scheme: \(schemeName)")
+                    }
+                } catch {
+                    if Sanscript.debug {
+                        print("Warning: Failed to load Roman scheme \(schemeName): \(error)")
+                    }
+                }
+            }
+        }
     }
     
     /// Static wrapper for the t method to maintain compatibility with existing code

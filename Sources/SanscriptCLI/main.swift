@@ -38,57 +38,17 @@ Sanscript.debug = isDebug
 tomlParserDebug = isDebug
 
 // Load schemes from file system path
-print("Loading schemes from file system...")
-do {
-    // Get the path to the resources directory
-    let resourcesPath = "/Users/schwark/projects/SanscriptSwift/Sources/SanscriptSwift/Resources/common_maps"
-    
-    // Get paths to brahmic and roman directories
-    let brahmicPath = "\(resourcesPath)/brahmic"
-    let romanPath = "\(resourcesPath)/roman"
-    
-    // Load schemes from these directories
-    let fileManager = FileManager.default
-    
-    // Load Brahmic schemes
-    if let brahmicFiles = try? fileManager.contentsOfDirectory(at: URL(fileURLWithPath: brahmicPath), includingPropertiesForKeys: nil) {
-        for fileURL in brahmicFiles where fileURL.pathExtension == "toml" {
-            let schemeName = fileURL.deletingPathExtension().lastPathComponent
-            do {
-                try sanscript.loadSchemeFromTOML(filePath: fileURL.path, isRoman: false)
-                if isDebug {
-                    print("Loaded Brahmic scheme: \(schemeName)")
-                }
-            } catch {
-                print("Warning: Failed to load Brahmic scheme \(schemeName): \(error)")
-            }
-        }
-    }
-    
-    // Load Roman schemes
-    if let romanFiles = try? fileManager.contentsOfDirectory(at: URL(fileURLWithPath: romanPath), includingPropertiesForKeys: nil) {
-        for fileURL in romanFiles where fileURL.pathExtension == "toml" {
-            let schemeName = fileURL.deletingPathExtension().lastPathComponent
-            do {
-                try sanscript.loadSchemeFromTOML(filePath: fileURL.path, isRoman: true)
-                if isDebug {
-                    print("Loaded Roman scheme: \(schemeName)")
-                }
-            } catch {
-                print("Warning: Failed to load Roman scheme \(schemeName): \(error)")
-            }
-        }
-    }
-    
-    // Check if we have the required schemes for our tests
-    if sanscript.schemes["devanagari"] != nil && sanscript.schemes["iast"] != nil {
-        if isDebug {
-            print("Required schemes loaded successfully")
-        }
-    } else {
-        print("Error: Required schemes 'devanagari' and/or 'iast' were not loaded")
-        exit(1)
-    }
+// Check if required schemes are loaded
+if isDebug {
+    print("Checking for required schemes...")
+}
+
+if sanscript.schemes["devanagari"] == nil || sanscript.schemes["iast"] == nil {
+    print("Error: Required schemes 'devanagari' and/or 'iast' were not loaded")
+    exit(1)
+} else if isDebug {
+    print("Required schemes loaded successfully")
+    print("Available schemes: \(sanscript.schemes.keys.sorted().joined(separator: ", "))")
 }
 
 // Function to run transliteration
