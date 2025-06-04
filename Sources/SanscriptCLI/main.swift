@@ -137,7 +137,7 @@ for test in clusterTestCases {
 }
 
 // Test with JavaScript reference output
-print("\nComparison with JavaScript reference output:")
+print("\nComparison with JavaScript reference output (IAST to Devanagari):")
 let referenceTests = [
     ("namaste", "नमस्ते"),
     ("saṃskṛta", "संस्कृत"),
@@ -147,7 +147,36 @@ let referenceTests = [
 ]
 
 for (input, expected) in referenceTests {
+    print("==== TRANSLITERATE ROMAN DEBUG ====")
+    print("Input: \(input)")
     let result = Sanscript.t(input, from: "iast", to: "devanagari")
+    print("==== END TRANSLITERATE ROMAN DEBUG ====")
+    let matches = result == expected
+    print("  '\(input)' -> '\(result)'")
+    print("    Expected: '\(expected)'")
+    print("    Matches: \(matches ? "✓" : "✗")")
+}
+
+// Test with ITRANS to Devanagari
+print("\nComparison with JavaScript reference output (ITRANS to Devanagari):")
+let itransTests = [
+    ("namaste", "नमस्ते"),
+    ("saMskRta", "संस्कृत"),
+    ("shrImad bhagavad gItA", "श्रीमद् भगवद् गीता"),
+    ("kRShNa", "कृष्ण"),
+    ("dharma", "धर्म"),
+    ("rAma", "राम"),
+    ("gaNapati", "गणपति"),
+    ("sha.nkara", "शङ्कर"),
+    ("shiva", "शिव"),
+    ("durgA", "दुर्गा")
+]
+
+for (input, expected) in itransTests {
+    print("==== TRANSLITERATE ROMAN DEBUG ====")
+    print("Input: \(input)")
+    let result = Sanscript.t(input, from: "itrans", to: "devanagari")
+    print("==== END TRANSLITERATE ROMAN DEBUG ====")
     let matches = result == expected
     print("  '\(input)' -> '\(result)'")
     print("    Expected: '\(expected)'")

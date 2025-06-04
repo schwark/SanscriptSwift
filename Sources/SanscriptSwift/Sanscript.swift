@@ -250,19 +250,19 @@ public class Sanscript {
         print("\n==== TRANSLITERATE ROMAN DEBUG ====")
         print("Input: \(data)")
         
-        var buf = [String]()
+        let fromSchemeA = map["fromSchemeA"] as? String ?? "a"
         let consonants = map["consonants"] as? [String: String] ?? [:]
-        let dataLength = data.count
         let letters = map["letters"] as? [String: String] ?? [:]
         let marks = map["marks"] as? [String: String] ?? [:]
-        let maxTokenLength = map["maxTokenLength"] as? Int ?? 0
+        let virama = map["virama"] as? String ?? ""
+        
+        let toRoman = map["toRoman"] as? Bool ?? false
+        let dataLength = data.count
+        let maxTokenLength = map["maxTokenLength"] as? Int ?? 1
         let optSkipSGML = options.skipSgml
         let optSyncope = options.syncope
-        let toRoman = map["toRoman"] as? Bool ?? false
-        let virama = map["virama"] as? String ?? ""
-        let fromSchemeA = map["fromSchemeA"] as? String ?? ""
         
-        // We don't need to clean the virama here as TOMLParser already handles quotes
+        var buf = ""
         
         print("fromSchemeA: '\(fromSchemeA)'")
         print("virama: '\(virama)'")
@@ -272,8 +272,6 @@ public class Sanscript {
         print("letters count: \(letters.count)")
         print("")
         var hadConsonant = false
-        var tempLetter: String? = nil
-        var tempMark: String? = nil
         var tokenBuffer = ""
         
         // Transliteration state variables
@@ -298,17 +296,13 @@ public class Sanscript {
             print("hadConsonant: \(hadConsonant)")
             
             // Match all token substrings to our map
-            var j = 0
-            var found = false
             
             // Process the token buffer until we find a match or reach the end
-            outerLoop: while j < maxTokenLength {
-                if j >= tokenBuffer.count {
-                    j += 1
-                    continue
-                }
+            // This matches the JavaScript loop structure exactly: for (let j = 0; j < maxTokenLength; j++)
+            for j in 0..<maxTokenLength {
                 
-                let token = String(tokenBuffer.prefix(maxTokenLength - j))
+                // This matches JavaScript's: const token = tokenBuffer.substr(0, maxTokenLength - j);
+                let token = tokenBuffer.count >= (maxTokenLength - j) ? String(tokenBuffer.prefix(maxTokenLength - j)) : tokenBuffer
                 print("  Trying token: '\(token)' (j=\(j))")
                 
                 if skippingSGML {
@@ -318,86 +312,74 @@ public class Sanscript {
                 } else if token == "##" {
                     toggledTrans = !toggledTrans
                     tokenBuffer = String(tokenBuffer.dropFirst(2))
-                    found = true
                     print("  Found ##, toggling transliteration")
                     break
                 }
                 
                 skippingTrans = skippingSGML || toggledTrans
                 
-                if !skippingTrans {
-                    tempLetter = letters[token]
-                    if tempLetter != nil {
-                        print("  Found match: '\(token)' -> '\(tempLetter!)' (isConsonant: \(consonants[token] != nil))")
-                        
-                        if toRoman {
-                            buf.append(tempLetter!)
-                            print("  Added to buffer (toRoman): '\(tempLetter!)'")
-                        } else {
-                            // Handle the implicit vowel. Ignore 'a' and force
-                            // vowels to appear as marks if we've just seen a consonant
-                            if hadConsonant {
-                                tempMark = marks[token]
-                                if tempMark != nil {
-                                    buf.append(tempMark!)
-                                    print("  Added mark to buffer: '\(tempMark!)'")
-                                } else if token != fromSchemeA {
-                                    buf.append(virama)
-                                    buf.append(tempLetter!)
-                                    print("  Added virama + letter to buffer: '\(virama)\(tempLetter!)'")
-                                } else {
-                                    print("  Skipped implicit 'a' after consonant")
-                                }
-                            } else {
-                                buf.append(tempLetter!)
-                                print("  Added to buffer: '\(tempLetter!)'")
-                            }
-                            hadConsonant = consonants[token] != nil
-                            print("  Updated hadConsonant: \(hadConsonant)")
-                        }
-                        
-                        tokenBuffer = String(tokenBuffer.dropFirst(maxTokenLength - j))
-                        print("  Updated token buffer: '\(tokenBuffer)'")
-                        found = true
-                        break outerLoop
-                    } else if j == maxTokenLength - 1 {
+                // This exactly matches the JavaScript logic:
+                // if ((tempLetter = letters[token]) !== undefined && !skippingTrans) { ... }
+                if let tempLetter = letters[token], !skippingTrans {
+                    print("  Found match: '\(token)' -> '\(tempLetter)' (isConsonant: \(consonants[token] != nil))")
+                    
+                    if toRoman {
+                        buf += tempLetter
+                        print("  Added to buffer (toRoman): '\(tempLetter)'")
+                    } else {
+                        // Handle the implicit vowel. Ignore 'a' and force
+                        // vowels to appear as marks if we've just seen a consonant
                         if hadConsonant {
-                            hadConsonant = false
-                            if !optSyncope {
-                                buf.append(virama)
-                                print("  Added virama to buffer: '\(virama)'")
+                            if let tempMark = marks[token] {
+                                buf += tempMark
+                                print("  Added mark to buffer: '\(tempMark)'")
+                            } else if token != fromSchemeA {
+                                buf += virama
+                                buf += tempLetter
+                                print("  Added virama + letter to buffer: '\(virama)\(tempLetter)'")
+                            } else {
+                                print("  Skipped implicit 'a' after consonant")
                             }
+                        } else {
+                            buf += tempLetter
+                            print("  Added to buffer: '\(tempLetter)'")
                         }
-                        
-                        buf.append(token)
-                        print("  No match found, added to buffer: '\(token)'")
-                        tokenBuffer = String(tokenBuffer.dropFirst(1))
-                        print("  Updated token buffer: '\(tokenBuffer)'")
-                        // Break out of the outer loop to start over with the next character
-                        break outerLoop
+                        hadConsonant = consonants[token] != nil
+                        print("  Updated hadConsonant: \(hadConsonant)")
                     }
+                    
+                    tokenBuffer = String(tokenBuffer.dropFirst(maxTokenLength - j))
+                    print("  Updated token buffer: '\(tokenBuffer)'")
+                    break
                 } else if j == maxTokenLength - 1 {
-                    buf.append(token)
-                    print("  Skipping transliteration, added to buffer: '\(token)'")
+                    // This is the fallback case when no match is found after trying all possible token lengths
+                    if hadConsonant {
+                        hadConsonant = false
+                        if !optSyncope {
+                            buf += virama
+                            print("  Added virama to buffer: '\(virama)'")
+                        }
+                    }
+                    
+                    buf += token // token is now just the first character
+                    print("  No match found, added to buffer: '\(token)'")
                     tokenBuffer = String(tokenBuffer.dropFirst(1))
                     print("  Updated token buffer: '\(tokenBuffer)'")
+                    break
                 }
-                
-                j += 1
             }
             
-            // In JavaScript, there's no equivalent block here.
-            // After processing a character and updating the token buffer,
-            // it immediately goes back to the outer loop and tries to match the updated token buffer.
+            // No safety check needed anymore since we've updated the loop structure
+            // to match JavaScript exactly
         }
         
         // If we end with a consonant and syncope is not enabled, add a virama
         if hadConsonant && !optSyncope {
-            buf.append(virama)
+            buf += virama
             print("Added final virama: '\(virama)'")
         }
         
-        var result = buf.joined()
+        var result = buf
         print("Result before accent handling: '\(result)'")
         
         // Handle accent placement for non-Roman scripts
