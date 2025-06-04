@@ -98,14 +98,25 @@ for test in testCases {
     print("\nTesting: '\(test)'")
     let result = Sanscript.t(test, from: "iast", to: "devanagari")
     print("  Result: '\(result)'")
-    
-    // Print character by character for this test
-    print("  Character breakdown:")
-    for (i, c) in test.enumerated() {
-        let char = String(c)
-        let charResult = Sanscript.t(char, from: "iast", to: "devanagari")
-        print("    \(i): '\(char)' -> '\(charResult)'")
-    }
+}
+
+// Test ITRANS_DRAVIDIAN to Telugu transliteration
+print("\n\nITRANS_DRAVIDIAN to Telugu tests:")
+let teluguTestCases = [
+    "a",                  // అ
+    "ka",                 // క
+    "shrImad",           // శ్రీమద్
+    "bhagavad gItA",     // భగవద్ గీతా
+    "namasthe",          // నమస్తే
+    "telugu",            // తెలుగు
+    "nArAyaNa",          // నారాయణ
+    "kRRiShNa"           // కృష్ణ
+]
+
+for test in teluguTestCases {
+    print("\nTesting ITRANS_DRAVIDIAN to Telugu: '\(test)'")
+    let result = Sanscript.t(test, from: "itrans_dravidian", to: "telugu")
+    print("  Result: '\(result)'")
 }
 
 // Test with debugging info
@@ -176,6 +187,34 @@ for (input, expected) in itransTests {
     print("==== TRANSLITERATE ROMAN DEBUG ====")
     print("Input: \(input)")
     let result = Sanscript.t(input, from: "itrans", to: "devanagari")
+    print("==== END TRANSLITERATE ROMAN DEBUG ====")
+    let matches = result == expected
+    print("  '\(input)' -> '\(result)'")
+    print("    Expected: '\(expected)'")
+    print("    Matches: \(matches ? "✓" : "✗")")
+}
+
+// Test with ITRANS_DRAVIDIAN to Telugu
+print("\nComparison with JavaScript reference output (ITRANS_DRAVIDIAN to Telugu):")
+let itransTeluguTests = [
+    ("namastE", "నమస్తే"),
+    ("saMskRRita", "సంస్కృత"),
+    ("shrImad bhagavad gItA", "శ్రీమద్ భగవద్ గీతా"),
+    ("kRRiShNa", "కృష్ణ"),
+    ("dharma", "ధర్మ"),
+    ("rAma", "రామ"),
+    ("gaNapati", "గణపతి"),
+    ("shaMkara", "శంకర"),
+    ("shiva", "శివ"),
+    ("durgA", "దుర్గా"),
+    ("telugu", "తెలుగు"),
+    ("nArAyaNa", "నారాయణ")
+]
+
+for (input, expected) in itransTeluguTests {
+    print("==== TRANSLITERATE ROMAN DEBUG ====")
+    print("Input: \(input)")
+    let result = Sanscript.t(input, from: "itrans_dravidian", to: "telugu")
     print("==== END TRANSLITERATE ROMAN DEBUG ====")
     let matches = result == expected
     print("  '\(input)' -> '\(result)'")
